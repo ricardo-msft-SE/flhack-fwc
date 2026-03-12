@@ -1,6 +1,6 @@
 # Software Request Approval — AI-Powered Future Architecture
 
-> **"From Days to Minutes"** — Replace a manual, multi-day software approval workflow with an AI multi-agent system built on **Microsoft Azure AI Foundry** that researches, evaluates, and reports on software requests automatically, routing only the final decision to a human approver.
+> **"From Days to Minutes"** — Replace a manual, multi-day software approval workflow with an AI multi-agent system built on **Microsoft Foundry** that researches, evaluates, and reports on software requests automatically, routing only the final decision to a human approver.
 
 ![Software Request Approval — Future Architecture](arch3.png)
 
@@ -44,7 +44,7 @@
 
 | Capability | Platform / Service |
 |---|---|
-| Agent orchestration & hosting | Azure AI Foundry — Agent Service |
+| Agent orchestration & hosting | Microsoft Foundry Agent Service |
 | LLM reasoning | Azure OpenAI `gpt-4o` (or `o3`) |
 | Deep web research | Bing Grounding / Azure AI Search |
 | Knowledge & memory | Foundry Agent IQ (Knowledge Store) |
@@ -217,7 +217,7 @@ Output valid Markdown.
 
 ### Model Selection
 
-Configure models in **Azure AI Foundry > Model Catalog > Deployments**:
+Configure models in **Microsoft Foundry > Model Catalog > Deployments**:
 
 | Agent | Recommended Model | Rationale |
 |---|---|---|
@@ -236,26 +236,35 @@ Tokens per minute:  100,000 (TPM) — scale as needed
 Content filtering:  Enabled (default policy)
 ```
 
-### Bing Grounding (Deep Web Research)
+### Grounding with Bing Search (Native Connector)
 
-Bing Grounding is the primary mechanism for live web research. Configure it in the Foundry portal under **Agent Tools > Bing Grounding**:
+Microsoft Foundry provides a first-party **Grounding with Bing Search** tool — no separate Azure Bing Search resource provisioning is required. Configure it entirely within the portal:
 
-1. In the [Azure Portal](https://portal.azure.com), create a **Bing Search v7** resource (S1 tier recommended).
-2. Copy the **API key**.
-3. In **Azure AI Foundry > Agents > [Agent Name] > Tools**, add **Bing Grounding** and paste the key.
-4. Set the search parameters:
+1. In the [Microsoft Foundry portal](https://ai.azure.com), open your project and navigate to **Agents > [Agent Name] > Tools**.
+2. Click **+ Add tool** and select **Grounding with Bing Search**.
+3. The native first-party connection is established automatically — no API key or external resource needed.
+4. In the tool settings, configure:
+   - **Freshness**: `Month` (prefer results from the past month)
+   - **Safe Search**: `Strict`
+   - **Result count**: `10`
+5. Click **Save**.
 
-```json
-{
-  "tool_type": "bing_grounding",
-  "connection_id": "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{bing-resource}",
-  "freshness": "Month",        // Prefer results from the past month
-  "count": 10,                 // Results per query
-  "safe_search": "Strict"
-}
-```
+> **Tip:** Configure each research agent's system prompt to issue multiple targeted queries rather than one broad query (e.g., `"<SoftwareName> SOC 2 certification 2025"` vs. `"<SoftwareName> compliance"`).
 
-> **Tip:** For each research agent, instruct it to issue multiple targeted queries rather than one broad query (e.g., `"<SoftwareName> SOC 2 certification 2025"` vs. `"<SoftwareName> compliance"`).
+### Web Knowledge Base (Deep, Scheduled Research)
+
+For authoritative, periodically refreshed web content (NIST, CIS Controls, vendor documentation sites), use the **Knowledge > Create a knowledge base > Web** flow to build an AI Search-backed index that agents query via the Azure AI Search tool:
+
+1. In your project, navigate to **Knowledge bases > + New knowledge base**.
+2. Enter a name (e.g., `web-security-kb`) and choose **Web** as the data source.
+3. Add the domain URLs or specific pages to crawl — for example:
+   - `https://nvd.nist.gov` (CVE/NVD data)
+   - `https://www.cisecurity.org/controls` (CIS Controls)
+   - `https://marketplace.fedramp.gov` (FedRAMP authorized products)
+4. Select embedding model: `text-embedding-3-large`.
+5. Enable **semantic chunking**.
+6. Set a **refresh schedule** (weekly recommended for compliance and security sites).
+7. Connect the resulting index to the relevant research agent via **Tools > Azure AI Search** in the agent configuration, using the index name created above.
 
 ### Azure AI Search (Internal Knowledge)
 
@@ -410,7 +419,7 @@ If any gate fails, flag the report as **INCOMPLETE** and alert the workflow coor
 - Azure CLI installed (`az --version` ≥ 2.60)
 - Azure Developer CLI installed (`azd --version` ≥ 1.9)
 - Bicep CLI (`az bicep install`)
-- Foundry CLI (installed via `pip install azure-ai-projects`)
+- Azure AI Projects Python SDK (installed via `pip install azure-ai-projects`)
 
 ### 5.2 Provision the Foundry Project
 
@@ -421,26 +430,22 @@ az group create \
   --location eastus2
 ```
 
-**Step 2 — Create the Azure AI Foundry hub:**
+**Step 2 — Create the Microsoft Foundry Project:**
 
-In the [Azure AI Foundry portal](https://ai.azure.com):
-1. Navigate to **Management > All hubs > New hub**.
-2. Set **Hub name**: `swreq-approval-hub`
+In the [Microsoft Foundry portal](https://ai.azure.com):
+1. Click **+ New project**.
+2. Set **Project name**: `swreq-approval-project`.
 3. Select your subscription and resource group `rg-swreq-approval`.
 4. Select region: `East US 2` (recommended for model availability).
-5. Under **Connected resources**, accept auto-create for:
-   - Azure AI Services
+5. Under **Customize**, the portal auto-provisions the required backing resources:
+   - Azure AI Services (multi-service account)
    - Azure Key Vault
    - Azure Storage Account
-6. Click **Create**.
+6. Click **Create project**.
 
-**Step 3 — Create the Foundry Project:**
+> The explicit Hub resource is abstracted in the current Microsoft Foundry experience. The **Project** is the primary workspace. A hub is created automatically in the background but you interact exclusively with the project.
 
-1. In the hub, click **New project**.
-2. Name: `swreq-approval-project`
-3. Click **Create**.
-
-**Step 4 — Note the project endpoint:**
+**Step 3 — Note the project endpoint:**
 ```
 https://<hub-name>.services.ai.azure.com/api/projects/<project-name>
 ```
@@ -457,16 +462,7 @@ In **Foundry > Model Catalog**:
    - Tokens per minute: `100,000`
 4. Repeat for `o3` (optional, for deep research agents).
 
-**Bing Search Resource:**
-```bash
-az cognitiveservices account create \
-  --name bing-swreq-search \
-  --resource-group rg-swreq-approval \
-  --kind Bing.Search.v7 \
-  --sku S1 \
-  --location global \
-  --yes
-```
+> **Grounding with Bing Search** is a native first-party tool in Microsoft Foundry — no separate Bing resource provisioning is needed. It is enabled directly in the agent's **Tools** panel in the portal (see [Section 3](#3-llm--web-search-configuration)).
 
 **Azure AI Search:**
 ```bash
@@ -507,7 +503,7 @@ In the [Foundry portal](https://ai.azure.com):
 
 ## 6. Foundry Agent Configuration (No-Code)
 
-All agents are configured entirely through the **Azure AI Foundry portal** — no custom code deployment required for the core multi-agent workflow.
+All agents are configured entirely through the **Microsoft Foundry portal** — no custom code deployment required for the core multi-agent workflow.
 
 ### 6.1 Orchestrator Agent Setup
 
@@ -603,16 +599,18 @@ Work IQ connects the AI process to organizational approval chains:
 | `compliance-frameworks-index` | NIST CSF, CIS Controls, ISO annexes, FedRAMP package docs | Compliance Agent |
 | `cve-bulletins-index` | Internal security advisories, patch notes, red team findings | Security Agent |
 
-### 8.2 Populating Indexes
+### 8.2 Populating Knowledge Bases
 
-1. In **Foundry > Agent IQ > Knowledge > + New index**.
-2. Select data source:
-   - **Azure Blob Storage** — upload policy PDFs, past reports
-   - **SharePoint** — connect to IT policy library
-   - **Web URLs** — crawl NIST, CIS websites (schedule weekly refresh)
-3. Choose **embedding model**: `text-embedding-3-large` (deployed in Foundry Model Catalog).
+1. In your project, navigate to **Knowledge bases > + New knowledge base**.
+2. Select a data source type:
+   - **Files** — upload policy PDFs and past reports directly from local storage
+   - **Azure Blob Storage** — connect to an existing storage container
+   - **SharePoint** — connect to your IT policy library
+   - **Web** — crawl NIST, CIS, FedRAMP, and vendor documentation sites on a recurring schedule
+3. Choose **embedding model**: `text-embedding-3-large` (deployed in your project's Model Catalog).
 4. Enable **semantic chunking** for policy documents.
-5. Set **refresh schedule** (weekly recommended).
+5. Set **refresh schedule** (weekly recommended for compliance and security knowledge bases).
+6. Once created, connect the knowledge base to the relevant agent via **Agents > [Agent Name] > Tools > + Add tool > Azure AI Search**, selecting the index that backs the knowledge base.
 
 ### 8.3 Grounding Strategy
 
