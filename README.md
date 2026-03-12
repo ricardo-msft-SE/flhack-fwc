@@ -240,31 +240,31 @@ Content filtering:  Enabled (default policy)
 
 Microsoft Foundry provides a first-party **Grounding with Bing Search** tool — no separate Azure Bing Search resource provisioning is required. Configure it entirely within the portal:
 
-1. In the [Microsoft Foundry portal](https://ai.azure.com), open your project and navigate to **Agents > [Agent Name] > Tools**.
-2. Click **+ Add tool** and select **Grounding with Bing Search**.
-3. The native first-party connection is established automatically — no API key or external resource needed.
-4. In the tool settings, configure:
-   - **Freshness**: `Month` (prefer results from the past month)
-   - **Safe Search**: `Strict`
-   - **Result count**: `10`
-5. Click **Save**.
+1. In the [Microsoft Foundry portal](https://ai.azure.com), open your project and navigate to **Knowledge** in the left navigation pane (the Foundry IQ page).
+2. Click **Create a knowledge base** (top right).
+3. In the **"Choose a knowledge type"** dialog, scroll to the **Tools** section at the bottom.
+4. Select **Grounding with Bing Search** — *"Enable your agent to use Grounding with Bing Search to access and return information from the web"*.
+5. Click **Connect** — the connection is established automatically with no API key or external resource required.
+6. Once connected, the tool appears in your project's tool list and can be added to any agent via the **Agent Builder**.
 
 > **Tip:** Configure each research agent's system prompt to issue multiple targeted queries rather than one broad query (e.g., `"<SoftwareName> SOC 2 certification 2025"` vs. `"<SoftwareName> compliance"`).
 
 ### Web Knowledge Base (Deep, Scheduled Research)
 
-For authoritative, periodically refreshed web content (NIST, CIS Controls, vendor documentation sites), use the **Knowledge > Create a knowledge base > Web** flow to build an AI Search-backed index that agents query via the Azure AI Search tool:
+For authoritative, periodically refreshed web content (NIST, CIS Controls, vendor documentation sites), use the **Web** knowledge base type in the Foundry IQ portal to build an AI Search-backed index that agents query via the Azure AI Search tool:
 
-1. In your project, navigate to **Knowledge bases > + New knowledge base**.
-2. Enter a name (e.g., `web-security-kb`) and choose **Web** as the data source.
-3. Add the domain URLs or specific pages to crawl — for example:
+1. In your project, navigate to **Knowledge** (left nav) — this opens the **Foundry IQ** page.
+2. Click **Create a knowledge base** (top right button).
+3. In the **"Choose a knowledge type"** dialog, under **Configure a knowledge base**, select **Web** — *"Ground with real-time web content via Bing"*.
+4. Click **Connect**.
+5. Enter a name (e.g., `web-security-kb`) and add the URLs to crawl — for example:
    - `https://nvd.nist.gov` (CVE/NVD data)
    - `https://www.cisecurity.org/controls` (CIS Controls)
    - `https://marketplace.fedramp.gov` (FedRAMP authorized products)
-4. Select embedding model: `text-embedding-3-large`.
-5. Enable **semantic chunking**.
-6. Set a **refresh schedule** (weekly recommended for compliance and security sites).
-7. Connect the resulting index to the relevant research agent via **Tools > Azure AI Search** in the agent configuration, using the index name created above.
+6. Select embedding model: `text-embedding-3-large`.
+7. Enable **semantic chunking**.
+8. Set a **refresh schedule** (weekly recommended for compliance and security sites).
+9. Once the knowledge base is active, add it to the relevant research agent via the agent's **Knowledge** tab in Agent Builder.
 
 ### Azure AI Search (Internal Knowledge)
 
@@ -275,7 +275,7 @@ Use Azure AI Search as a grounding store for internal policies, past reports, an
    - `policy-index` — internal IT/security/compliance policies
    - `vendor-index` — approved/denied vendors, past evaluations
    - `report-template-index` — approved report templates and past successful reports
-3. Connect in Foundry: **Agent > Tools > Azure AI Search > Add connection**.
+3. Connect in Foundry: navigate to **Knowledge** (left nav) → **Create a knowledge base** → under the **Tools** section in the dialog, select **Azure AI search** and follow the connection flow.
 4. Configure semantic ranking:
 
 ```json
@@ -601,16 +601,24 @@ Work IQ connects the AI process to organizational approval chains:
 
 ### 8.2 Populating Knowledge Bases
 
-1. In your project, navigate to **Knowledge bases > + New knowledge base**.
-2. Select a data source type:
-   - **Files** — upload policy PDFs and past reports directly from local storage
-   - **Azure Blob Storage** — connect to an existing storage container
-   - **SharePoint** — connect to your IT policy library
-   - **Web** — crawl NIST, CIS, FedRAMP, and vendor documentation sites on a recurring schedule
-3. Choose **embedding model**: `text-embedding-3-large` (deployed in your project's Model Catalog).
-4. Enable **semantic chunking** for policy documents.
+All knowledge bases are created from the **Foundry IQ** page:
+
+1. In your project, navigate to **Knowledge** in the left navigation pane.
+2. Click **Create a knowledge base** (top right).
+3. In the **"Choose a knowledge type"** dialog, select the appropriate source under **Configure a knowledge base**:
+
+| Source | When to use | Notes |
+|---|---|---|
+| **Azure AI Search Index** | Connect an existing AI Search index | Enterprise-scale; use for `policy-index`, `vendor-index` |
+| **Azure Blob Storage** | Upload policy PDFs, past reports | Backed by Foundry IQ ingestion pipeline |
+| **Web** | Crawl NIST, CIS, FedRAMP, vendor docs | Real-time web via Bing; no re-indexing required |
+| **Microsoft SharePoint (Remote)** | Live SharePoint content without indexing | Uses Microsoft 365 governance; content retrieved at query time |
+| **Microsoft SharePoint (Indexed)** | SharePoint content indexed into AI Search | Best for custom retrieval pipelines with semantic ranking |
+| **Microsoft OneLake** | Unstructured data from Fabric/OneLake | Use for large-scale analytics data sources |
+
+4. Follow the **Connect** flow for the selected source type.
 5. Set **refresh schedule** (weekly recommended for compliance and security knowledge bases).
-6. Once created, connect the knowledge base to the relevant agent via **Agents > [Agent Name] > Tools > + Add tool > Azure AI Search**, selecting the index that backs the knowledge base.
+6. Once the knowledge base status shows **Active**, add it to the relevant agent via the agent's **Knowledge** tab in Agent Builder.
 
 ### 8.3 Grounding Strategy
 
