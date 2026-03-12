@@ -1,9 +1,66 @@
 ---
-layout: default
-title: "Software Request Approval — AI-Powered Future Architecture"
+layout: home
+title: Home
+nav_order: 1
 ---
 
-# Software Request Approval — AI-Powered Future Architecture
+# Software Request Approval — AI Architecture
+{: .fs-9 }
+
+An AI multi-agent system built on **Microsoft Foundry** that turns a multi-day manual software approval process into a 3–7 minute automated workflow.
+{: .fs-6 .fw-300 }
+
+[Get Started](getting-started.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[View on GitHub](https://github.com/ricardo-msft-SE/flhack-fwc){: .btn .fs-5 .mb-4 .mb-md-0 }
+
+---
+
+![Software Request Approval — Future Architecture](arch3.png)
+
+## What It Does
+
+The system receives a software request, automatically researches compliance, security, and vendor risk using parallel specialist AI agents, generates a structured approval report, and routes only the **final human decision** — all within minutes.
+
+| Capability | Platform / Service |
+|---|---|
+| Agent orchestration & hosting | Microsoft Foundry Agent Service |
+| LLM reasoning | Azure OpenAI `gpt-4o` / `o3` |
+| Deep web research | Grounding with Bing Search |
+| Knowledge & memory | Foundry Agent IQ (Knowledge Store) |
+| Workflow & approval | Microsoft Copilot Studio + Work IQ |
+| System-of-record updates | Power Automate / Logic Apps |
+| Monitoring & evaluation | Azure AI Foundry Evaluation + App Insights |
+
+---
+
+## Documentation Map
+
+| Page | Description |
+|---|---|
+| [Architecture Overview](architecture.md) | High-level design, key platforms, end-to-end flow |
+| [Multi-Agent Design](agents.md) | All six agents — prompts, tools, and topology |
+| [Getting Started](getting-started.md) | Prerequisites, Azure provisioning, project setup |
+| [Configuration](configuration.md) | LLM models, Foundry agent setup, Knowledge/Bing |
+| [Usage & Approval Workflow](usage.md) | Copilot Studio, Work IQ, and the Teams approval card |
+| [Report Specification](report-spec.md) | Report template structure and quality gates |
+| [Security & RBAC](security.md) | Managed identities, role assignments, content safety |
+| [Monitoring & Evaluation](monitoring.md) | App Insights, Foundry Evaluation, key metrics |
+| [Troubleshooting](troubleshooting.md) | Common issues and fixes |
+| [FAQ](faq.md) | Frequently asked questions |
+| [Glossary](glossary.md) | Terms and definitions |
+
+---
+
+## How It Works
+
+1. An employee submits a software request via a **Copilot Studio bot** in Microsoft Teams.
+2. The **Orchestrator Agent** extracts structured metadata and fans out to three specialist agents **in parallel**.
+3. **Research agents** (Compliance, Security, Vendor) gather evidence using Bing Grounding and Azure AI Search.
+4. The **Report Builder Agent** assembles a structured Markdown approval report with a risk matrix and recommendation.
+5. **Power Automate** routes the report to the correct approver via a Teams Adaptive Card — one click to Approve, Conditional Approve, or Reject.
+6. The **System Updater Agent** writes the decision back to ServiceNow, Entra ID, and SharePoint.
+
+**Total elapsed time: ~3–7 minutes** (vs. multiple days manually).
 
 > **"From Days to Minutes"** — Replace a manual, multi-day software approval workflow with an AI multi-agent system built on **Microsoft Foundry** that researches, evaluates, and reports on software requests automatically, routing only the final decision to a human approver.
 

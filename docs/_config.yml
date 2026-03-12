@@ -1,21 +1,67 @@
-title: "Software Request Approval — AI Architecture"
-description: "Future architecture documentation for the AI-powered Software Request Approval system built on Microsoft Foundry."
-theme: jekyll-theme-cayman
+remote_theme: just-the-docs/just-the-docs@v0.10.0
 
-# GitHub Pages settings
-show_downloads: false
-google_analytics:
+title: "Software Request Approval"
+description: >-
+  AI-powered future architecture documentation for the Software Request
+  Approval system built on Microsoft Foundry, Copilot Studio, and Azure AI Search.
 
-# Markdown settings
+url: "https://ricardo-msft-se.github.io"
+baseurl: "/flhack-fwc"
+
+# Search
+search_enabled: true
+search:
+  heading_level: 3
+  previews: 2
+
+# Heading anchors
+heading_anchors: true
+
+# Footer
+footer_content: >
+  &copy; 2026 Microsoft Hackathon &mdash;
+  <a href="https://github.com/ricardo-msft-SE/flhack-fwc">View source on GitHub</a>
+
+# "Edit this page" links
+gh_edit_link: true
+gh_edit_link_text: "Edit this page on GitHub"
+gh_edit_repository: "https://github.com/ricardo-msft-SE/flhack-fwc"
+gh_edit_branch: "main"
+gh_edit_source: docs
+gh_edit_view_mode: "edit"
+
+# Callouts
+callouts_level: quiet
+callouts:
+  note:
+    title: Note
+    color: blue
+  tip:
+    title: Tip
+    color: green
+  warning:
+    title: Warning
+    color: yellow
+  important:
+    title: Important
+    color: red
+
+# Color scheme (light or dark)
+color_scheme: light
+
+# Navigation sort order
+nav_sort: order
+
+# Markdown
 markdown: kramdown
 kramdown:
   input: GFM
   syntax_highlighter: rouge
 
-# Plugins
 plugins:
-  - jekyll-relative-links
+  - jekyll-seo-tag
 
-relative_links:
-  enabled: true
-  collections: false
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - "*.gemspec"
