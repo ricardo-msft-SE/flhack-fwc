@@ -2,6 +2,8 @@
 
 > **"From Days to Minutes"** — Replace a manual, multi-day software approval workflow with an AI multi-agent system built on **Microsoft Azure AI Foundry** that researches, evaluates, and reports on software requests automatically, routing only the final decision to a human approver.
 
+![Software Request Approval — Future Architecture](arch3.png)
+
 ---
 
 ## Table of Contents
@@ -36,31 +38,7 @@
 
 ## 1. Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                  FUTURE STATE  (Minutes, not Days)                  │
-│                                                                     │
-│  REQUEST  ──►  ORCHESTRATOR AGENT                                   │
-│                      │                                              │
-│         ┌────────────┼────────────┐                                 │
-│         ▼            ▼            ▼                                 │
-│   COMPLIANCE      SECURITY     VENDOR                               │
-│     AGENT          AGENT      CHECKLIST                             │
-│    (NIST/CIS)    (CVE/SBOM)    AGENT                                │
-│         │            │            │                                 │
-│         └────────────┼────────────┘                                 │
-│                      ▼                                              │
-│              REPORT BUILDER AGENT                                   │
-│              (Comprehensive PDF/HTML Report)                        │
-│                      │                                              │
-│              ┌───────┴────────┐                                     │
-│              ▼                ▼                                     │
-│        HUMAN APPROVAL   AI UPDATES SYSTEM                           │
-│        (Teams Adaptive   (ServiceNow/ITSM                           │
-│         Card / Email)     record update)                            │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Architecture Overview](card2.png)
 
 **Key Platforms Used:**
 
@@ -674,6 +652,8 @@ The approver receives a Teams Adaptive Card (sent via Power Automate) that conta
 }
 ```
 
+![Approval Adaptive Card — Teams Example](card1.png)
+
 ### 9.2 Past Reports as Grounding ("Which past reports have succeeded?")
 
 The system learns from history. The Report Builder Agent queries `report-template-index` for:
@@ -770,45 +750,7 @@ Use **Foundry Evaluation** to continuously assess report quality:
 
 ## 12. End-to-End Flow Summary
 
-```
-1. EMPLOYEE submits request via Teams bot (Copilot Studio)
-          │
-          ▼
-2. ORCHESTRATOR AGENT receives request, extracts structured metadata
-   — Queries internal policy index (Agent IQ)
-   — Kicks off parallel fan-out to 3 research agents (Connected Agents)
-          │
-    ┌─────┼─────┐
-    ▼     ▼     ▼
-3a. COMPLIANCE    3b. SECURITY     3c. VENDOR CHECKLIST
-    AGENT             AGENT             AGENT
-    — Bing +          — Bing +          — Bing +
-      AI Search         AI Search         AI Search
-    — Returns JSON    — Returns JSON    — Returns JSON
-    │                 │                 │
-    └─────────────────┼─────────────────┘
-                      ▼
-4. REPORT BUILDER AGENT aggregates, formats comprehensive Markdown report
-   — Validates quality gates (all sections present, ≥5 evidence URLs/section)
-   — Uploads PDF to Azure Blob Storage
-   — Returns report URL + executive summary JSON
-          │
-          ▼
-5. POWER AUTOMATE routes Adaptive Card to correct Teams approver
-   (approver identity resolved via Work IQ org hierarchy)
-          │
-    ┌─────┴──────┐
-    ▼            ▼
-6a. HUMAN     6b. TIMER (if no response in 48h → escalate)
-    DECISION
-          │
-          ▼
-7. SYSTEM UPDATER AGENT writes decision to:
-   — ServiceNow (CMDB / ticket closure)
-   — SharePoint software catalog
-   — Entra ID / Intune (if approved — begin provisioning)
-   — Email notification to requester
-```
+![End-to-End Flow Summary](arch5a.png)
 
 **Total elapsed time: ~3–7 minutes** (vs. multiple days manually)
 
