@@ -1,0 +1,21 @@
+title: "Software Request Approval — AI Architecture"
+description: "Future architecture documentation for the AI-powered Software Request Approval system built on Microsoft Foundry."
+theme: jekyll-theme-cayman
+
+# GitHub Pages settings
+show_downloads: false
+google_analytics:
+
+# Markdown settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: false
