@@ -396,6 +396,8 @@ The **Report Builder Agent** produces a structured Markdown document that is con
 | [description] | [url] | [date] |
 ```
 
+![Sample Report Output](report1.png)
+
 ---
 
 ### 4.2 Report Quality Gates
