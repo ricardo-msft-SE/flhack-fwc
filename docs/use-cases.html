@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FWC × Microsoft AI — Use Case Showcase</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --fwc-navy:   #003366;
+      --fwc-teal:   #007B8A;
+      --fwc-aqua:   #00AECC;
+      --fwc-green:  #2E8B57;
+      --fwc-sand:   #F5F0E8;
+      --fwc-coral:  #E25B3B;
+      --fwc-gold:   #F0A500;
+      --fwc-slate:  #4A5568;
+      --fwc-light:  #EBF4F7;
+      --radius:     12px;
+      --shadow:     0 4px 20px rgba(0,0,0,.10);
+      --transition: .25s ease;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, #e8f4f8 0%, #f0f8ec 50%, #e8f0f8 100%);
+      min-height: 100vh;
+      color: #1a2030;
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--fwc-navy) 0%, var(--fwc-teal) 60%, var(--fwc-aqua) 100%);
+      color: #fff;
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 999px;
+      padding: .35rem 1rem;
+      font-size: .8rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: .75rem;
+      text-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .hero h1 span { color: var(--fwc-gold); }
+    .hero p {
+      max-width: 640px;
+      margin: 0 auto 2rem;
+      font-size: 1.05rem;
+      opacity: .9;
+      line-height: 1.6;
+    }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap;
+      margin-top: .5rem;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat .num {
+      display: block;
+      font-size: 2rem; font-weight: 800;
+      color: var(--fwc-gold);
+    }
+    .hero-stat .lbl {
+      font-size: .78rem; opacity: .8; text-transform: uppercase; letter-spacing: .05em;
+    }
+
+    /* ── Controls ───────────────────────────────────────────────── */
+    .controls {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+      gap: .75rem;
+      padding: 1.5rem 1.5rem 0;
+      max-width: 1200px; margin: 0 auto;
+    }
+    .filter-group {
+      display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+    }
+    .filter-label {
+      font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--fwc-slate); margin-right: .25rem;
+    }
+    .btn-filter {
+      border: 2px solid transparent;
+      background: #fff;
+      border-radius: 999px;
+      padding: .35rem .9rem;
+      font-size: .82rem; font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .btn-filter:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+    .btn-filter.active { color: #fff; border-color: transparent; }
+    .btn-filter[data-filter="all"].active    { background: var(--fwc-navy);  }
+    .btn-filter[data-filter="Internal"].active { background: var(--fwc-teal);  }
+    .btn-filter[data-filter="Public"].active   { background: var(--fwc-green); }
+    .btn-filter[data-filter="Mixed"].active    { background: var(--fwc-gold); color: #333;  }
+
+    .search-wrap {
+      position: relative; margin-left: auto;
+    }
+    .search-wrap input {
+      padding: .4rem 1rem .4rem 2.2rem;
+      border: 2px solid #d0dde5;
+      border-radius: 999px;
+      font-size: .85rem;
+      outline: none;
+      width: 220px;
+      transition: border-color .2s;
+      background: #fff;
+    }
+    .search-wrap input:focus { border-color: var(--fwc-aqua); }
+    .search-wrap svg {
+      position: absolute; left: .7rem; top: 50%; transform: translateY(-50%);
+      color: #9ab; pointer-events: none;
+    }
+
+    /* ── Grid ───────────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.4rem;
+      padding: 1.5rem 1.5rem 3rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ── Card ───────────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+      border: 1px solid rgba(0,0,0,.05);
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,.14); }
+    .card.hidden { display: none; }
+
+    .card-accent {
+      height: 5px;
+    }
+    .card[data-type="Internal"] .card-accent { background: linear-gradient(90deg, var(--fwc-teal), var(--fwc-aqua)); }
+    .card[data-type="Public"]   .card-accent { background: linear-gradient(90deg, var(--fwc-green), #68d391); }
+    .card[data-type="Mixed"]    .card-accent { background: linear-gradient(90deg, var(--fwc-gold), var(--fwc-coral)); }
+
+    .card-body { padding: 1.25rem 1.4rem 1rem; flex: 1; }
+
+    .card-header { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .85rem; }
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .card[data-type="Internal"] .card-icon { background: #e0f4f7; }
+    .card[data-type="Public"]   .card-icon { background: #e0f5ea; }
+    .card[data-type="Mixed"]    .card-icon { background: #fef3e0; }
+
+    .card-title-wrap { flex: 1; }
+    .card-title {
+      font-size: 1rem; font-weight: 700; line-height: 1.3;
+      color: var(--fwc-navy);
+      margin-bottom: .3rem;
+    }
+    .badges { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .badge {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; padding: .18rem .55rem;
+      border-radius: 999px;
+    }
+    .badge-type-Internal { background: #d0eef5; color: #005f6b; }
+    .badge-type-Public   { background: #c6f0d5; color: #1a6b35; }
+    .badge-type-Mixed    { background: #fde9c3; color: #8a5200; }
+
+    .card-summary {
+      font-size: .88rem; color: var(--fwc-slate); line-height: 1.55;
+      margin-bottom: .85rem;
+    }
+
+    .detail-row {
+      display: flex; gap: .5rem; margin-bottom: .55rem; align-items: flex-start;
+    }
+    .detail-label {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: #8a9bb0; min-width: 88px; padding-top: .05rem;
+    }
+    .detail-value {
+      font-size: .82rem; color: #2d3748; line-height: 1.45; flex: 1;
+    }
+
+    .card-footer {
+      padding: .75rem 1.4rem;
+      border-top: 1px solid #f0f4f8;
+      background: #fafcfe;
+    }
+    .align-text {
+      font-size: .8rem; color: var(--fwc-teal); font-style: italic; line-height: 1.4;
+    }
+    .align-text::before { content: '✦ '; opacity: .6; }
+
+    /* ── Legend ─────────────────────────────────────────────────── */
+    .legend {
+      display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;
+      padding: 1rem 1.5rem .5rem;
+      font-size: .8rem; color: var(--fwc-slate);
+      max-width: 1200px; margin: 0 auto;
+    }
+    .legend-item { display: flex; align-items: center; gap: .4rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: .78rem;
+      color: #8a9bb0;
+      border-top: 1px solid #dde8ef;
+      background: #fff;
+    }
+    footer strong { color: var(--fwc-navy); }
+
+    /* ── Empty State ─────────────────────────────────────────────── */
+    .empty {
+      display: none;
+      text-align: center; grid-column: 1/-1;
+      padding: 3rem 1rem; color: #9ab;
+    }
+    .empty.visible { display: block; }
+    .empty svg { margin-bottom: .75rem; }
+    .empty p { font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+<!-- ── Hero ──────────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="hero-badge">
+    🐊 Florida Fish &amp; Wildlife Conservation Commission
+  </div>
+  <h1>AI-Powered Future with <span>Microsoft Azure</span></h1>
+  <p>A curated set of <strong>Microsoft Azure AI Foundry</strong> use cases designed to accelerate FWC's mission — from harmful algal bloom monitoring to marine conservation and public engagement.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="num">12</span><span class="lbl">Use Cases</span></div>
+    <div class="hero-stat"><span class="num">5</span><span class="lbl">Public-Facing</span></div>
+    <div class="hero-stat"><span class="num">6</span><span class="lbl">Internal Ops</span></div>
+    <div class="hero-stat"><span class="num">1</span><span class="lbl">Mixed Delivery</span></div>
+  </div>
+</header>
+
+<!-- ── Legend ────────────────────────────────────────────────────── -->
+<div class="legend" aria-label="Card color legend">
+  <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,#007B8A,#00AECC)"></div> Internal</div>
+  <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,#2E8B57,#68d391)"></div> Public</div>
+  <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,#F0A500,#E25B3B)"></div> Mixed</div>
+</div>
+
+<!-- ── Controls ──────────────────────────────────────────────────── -->
+<div class="controls" role="toolbar" aria-label="Filter and search use cases">
+  <div class="filter-group">
+    <span class="filter-label">Filter:</span>
+    <button class="btn-filter active" data-filter="all">All (12)</button>
+    <button class="btn-filter" data-filter="Internal">Internal (6)</button>
+    <button class="btn-filter" data-filter="Public">Public (5)</button>
+    <button class="btn-filter" data-filter="Mixed">Mixed (1)</button>
+  </div>
+  <div class="search-wrap">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="search" id="search" placeholder="Search use cases…" aria-label="Search use cases" />
+  </div>
+</div>
+
+<!-- ── Cards Grid ────────────────────────────────────────────────── -->
+<main class="grid" id="grid" aria-label="Use case cards">
+
+  <!-- 1 HAB Field Ops Copilot -->
+  <article class="card" data-type="Internal"
+    data-title="HAB Field Ops Copilot"
+    data-priority="Identify/Monitor HABs"
+    data-llm="Azure AI Foundry Copilot for field crews"
+    data-summary="Q&A on SOPs, route plans, safety"
+    data-align="Speeds sampling, standardizes procedures">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🚤</div>
+        <div class="card-title-wrap">
+          <div class="card-title">HAB Field Ops Copilot</div>
+          <div class="badges">
+            <span class="badge badge-type-Internal">Internal</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Conversational assistant for field crews — instant answers on SOPs, route planning, and safety protocols during harmful algal bloom sampling operations.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Identify &amp; Monitor HABs</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Azure AI Foundry Copilot for field crews</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Speeds sampling, standardizes procedures</p>
+    </div>
+  </article>
+
+  <!-- 2 Red Tide Public Bulletin Generator -->
+  <article class="card" data-type="Public"
+    data-title="Red Tide Public Bulletin Generator"
+    data-priority="Timely Advisories"
+    data-llm="Auto-generate/redraft bulletins from sample feeds"
+    data-summary="Turn lab data into advisories in English and Spanish"
+    data-align="Faster, consistent public information">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🌊</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Red Tide Public Bulletin Generator</div>
+          <div class="badges">
+            <span class="badge badge-type-Public">Public</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Transforms raw lab sample data into clear public advisories in English and Spanish — automatically drafted and ready for review and release.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Timely Advisories</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Auto-generate / redraft bulletins from sample feeds</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Faster, consistent public information</p>
+    </div>
+  </article>
+
+  <!-- 3 Imaging Flow Cytometry Classifier Assist -->
+  <article class="card" data-type="Internal"
+    data-title="Imaging Flow Cytometry Classifier Assist"
+    data-priority="HAB Detection"
+    data-llm="Vision + LLM explain model outputs"
+    data-summary="Classify K. brevis from images with explainability"
+    data-align="Accelerates lab ID, training">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🔬</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Imaging Flow Cytometry Classifier Assist</div>
+          <div class="badges">
+            <span class="badge badge-type-Internal">Internal</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Uses computer vision to classify <em>Karenia brevis</em> cells from cytometry images, with LLM-generated explanations to support lab scientists and trainee development.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">HAB Detection</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Vision + LLM explain model outputs</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Accelerates lab identification, supports training</p>
+    </div>
+  </article>
+
+  <!-- 4 Respiratory Irritation Nowcast Copilot -->
+  <article class="card" data-type="Public"
+    data-title="Respiratory Irritation Nowcast Copilot"
+    data-priority="Public Health Advisories"
+    data-llm="Chat over Red Tide Status + NOAA nowcasts"
+    data-summary="Beach Q&A across red tide and forecast data"
+    data-align="Lowers call volume; better trip planning">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🏖️</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Respiratory Irritation Nowcast Copilot</div>
+          <div class="badges">
+            <span class="badge badge-type-Public">Public</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Conversational interface for the public to ask beach-safety questions, drawing from live Red Tide Status and NOAA respiratory irritation nowcasts.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Public Health Advisories</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Chat over Red Tide Status + NOAA nowcasts</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Lowers call volume; better trip planning</p>
+    </div>
+  </article>
+
+  <!-- 5 Citizen HAB Reporter -->
+  <article class="card" data-type="Public"
+    data-title="Citizen HAB Reporter"
+    data-priority="Citizen Science Engagement"
+    data-llm="Classify, de-duplicate, route incidents"
+    data-summary="Web/chat intake with triage and geotag"
+    data-align="Expands coverage; cleaner signals">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">📍</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Citizen HAB Reporter</div>
+          <div class="badges">
+            <span class="badge badge-type-Public">Public</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Web and chat intake portal for citizens to report potential harmful algal bloom sightings, with AI-powered triage, deduplication, geolocation, and routing to science teams.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Citizen Science Engagement</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Classify, de-duplicate, route incidents</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Expands geographic coverage; cleaner data signals</p>
+    </div>
+  </article>
+
+  <!-- 6 Seagrass–Manatee Impact Insights -->
+  <article class="card" data-type="Internal"
+    data-title="Seagrass–Manatee Impact Insights"
+    data-priority="Ecosystem Assessment"
+    data-llm="Narrative insights over BI model"
+    data-summary="Integrate seagrass, mortality, water-quality data"
+    data-align="Links stressors to outcomes">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🐟</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Seagrass–Manatee Impact Insights</div>
+          <div class="badges">
+            <span class="badge badge-type-Internal">Internal</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Integrates seagrass coverage, manatee mortality records, and water quality indices into a narrative analytics layer — surfacing cross-stressor insights for ecosystem managers.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Ecosystem Assessment</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Narrative insights over BI model</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Links environmental stressors to ecological outcomes</p>
+    </div>
+  </article>
+
+  <!-- 7 Coral Disease Intervention KB -->
+  <article class="card" data-type="Mixed"
+    data-title="Coral Disease Intervention KB"
+    data-priority="Coral Disease Response"
+    data-llm="Guided answers over protocols/dashboards"
+    data-summary="Protocol Q&A + dashboard assistant"
+    data-align="Faster, consistent guidance">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🪸</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Coral Disease Intervention KB</div>
+          <div class="badges">
+            <span class="badge badge-type-Mixed">Mixed</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Knowledge-base assistant that answers questions about stony coral tissue loss disease intervention protocols and surfaces relevant dashboard data for field responders and partners.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Coral Disease Response</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Guided answers over protocols &amp; dashboards</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Faster, consistent field guidance</p>
+    </div>
+  </article>
+
+  <!-- 8 HAB Forecast MLOps Assistant -->
+  <article class="card" data-type="Internal"
+    data-title="HAB Forecast MLOps Assistant"
+    data-priority="Monitoring &amp; Forecasting"
+    data-llm="LLM-assisted pipeline authoring"
+    data-summary="Pipelines, data checks, code helper"
+    data-align="Speeds model iteration, compliance">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">⚙️</div>
+        <div class="card-title-wrap">
+          <div class="card-title">HAB Forecast MLOps Assistant</div>
+          <div class="badges">
+            <span class="badge badge-type-Internal">Internal</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Developer assistant for data scientists managing HAB forecast pipelines — helps author ETL workflows, write data quality checks, and maintain model compliance documentation.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Monitoring &amp; Forecasting</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">LLM-assisted pipeline authoring</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Speeds model iteration and compliance</p>
+    </div>
+  </article>
+
+  <!-- 9 Event Response Summarizer -->
+  <article class="card" data-type="Internal"
+    data-title="Event Response Summarizer"
+    data-priority="Catastrophe Response"
+    data-llm="Auto-digest multi-channel ops intel"
+    data-summary="Combine emails/calls/social into briefs"
+    data-align="Improves situational awareness">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🚨</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Event Response Summarizer</div>
+          <div class="badges">
+            <span class="badge badge-type-Internal">Internal</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Aggregates emails, call logs, and social media signals from wildlife emergency events into concise, structured operational briefs for incident commanders and leadership.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Catastrophe Response</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Auto-digest multi-channel operational intelligence</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Improves situational awareness during incidents</p>
+    </div>
+  </article>
+
+  <!-- 10 Open Data Portal Natural Language Guide -->
+  <article class="card" data-type="Public"
+    data-title="Open Data Portal Natural Language Guide"
+    data-priority="Open Data &amp; Mapping"
+    data-llm="Ask a question, get a map/data link"
+    data-summary="NL search over FWC ArcGIS/Open Data"
+    data-align="Boosts data accessibility">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🗺️</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Open Data Portal Natural Language Guide</div>
+          <div class="badges">
+            <span class="badge badge-type-Public">Public</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Natural language interface over FWC's ArcGIS and Open Data portals — researchers, journalists, and citizens can ask questions and receive direct links to maps and datasets.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Open Data &amp; Mapping</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Ask a question, get a map / data link</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Boosts data accessibility for all audiences</p>
+    </div>
+  </article>
+
+  <!-- 11 Lab Instrument Data Hub -->
+  <article class="card" data-type="Internal"
+    data-title="Lab Instrument Data Hub"
+    data-priority="Data Management &amp; Sharing"
+    data-llm="Standardized data model + QC prompts"
+    data-summary="Ingest sensors/cytobots into lakehouse"
+    data-align="Improves data quality/availability">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">🧪</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Lab Instrument Data Hub</div>
+          <div class="badges">
+            <span class="badge badge-type-Internal">Internal</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Ingests heterogeneous data streams from sensors and cytobots into a unified lakehouse, with AI-assisted standardization and quality-control prompt workflows.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">Data Management &amp; Sharing</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Standardized data model + QC prompts</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Improves data quality and downstream availability</p>
+    </div>
+  </article>
+
+  <!-- 12 Marine RFP/Grant Assistant -->
+  <article class="card" data-type="Internal"
+    data-title="Marine RFP/Grant Assistant"
+    data-priority="External Grants (40%+ Funding)"
+    data-llm="Draft aid + requirement checks"
+    data-summary="Drafts, tracks grants, compliance"
+    data-align="Increases win rate, speed">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div class="card-icon">📋</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Marine RFP / Grant Assistant</div>
+          <div class="badges">
+            <span class="badge badge-type-Internal">Internal</span>
+          </div>
+        </div>
+      </div>
+      <p class="card-summary">Drafts grant proposals, tracks submission deadlines, and performs automated compliance checks against RFP requirements — supporting the 40%+ externally funded marine research program.</p>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">External Grants (40%+ of funding)</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">AI Approach</span>
+        <span class="detail-value">Draft aid + requirement checks</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <p class="align-text">Increases grant win rate and submission speed</p>
+    </div>
+  </article>
+
+  <!-- Empty state -->
+  <div class="empty" id="empty" role="status">
+    <svg width="48" height="48" fill="none" stroke="#b0c4ce" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <p>No use cases match your search.</p>
+  </div>
+
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────── -->
+<footer>
+  <p>
+    <strong>Florida Fish &amp; Wildlife Conservation Commission</strong> ×
+    <strong>Microsoft Azure AI Foundry</strong> &nbsp;|&nbsp;
+    Presented for FWC Hackathon 2025 &nbsp;·&nbsp; 12 AI Use Cases
+  </p>
+</footer>
+
+<script>
+  (function () {
+    var cards = Array.from(document.querySelectorAll('.card[data-type]'));
+    var filterBtns = Array.from(document.querySelectorAll('.btn-filter'));
+    var searchInput = document.getElementById('search');
+    var emptyState = document.getElementById('empty');
+    var activeFilter = 'all';
+
+    function normalize(str) { return str.toLowerCase().trim(); }
+
+    function applyFilters() {
+      var query = normalize(searchInput.value);
+      var visible = 0;
+      cards.forEach(function (card) {
+        var typeMatch = activeFilter === 'all' || card.dataset.type === activeFilter;
+        var textBlob = [
+          card.dataset.title, card.dataset.summary,
+          card.dataset.priority, card.dataset.llm, card.dataset.align
+        ].join(' ').toLowerCase();
+        var searchMatch = !query || textBlob.includes(query);
+        var show = typeMatch && searchMatch;
+        card.classList.toggle('hidden', !show);
+        if (show) visible++;
+      });
+      emptyState.classList.toggle('visible', visible === 0);
+    }
+
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filterBtns.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        applyFilters();
+      });
+    });
+
+    searchInput.addEventListener('input', applyFilters);
+  })();
+</script>
+
+</body>
+</html>
