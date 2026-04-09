@@ -713,10 +713,10 @@
     var emptyState = document.getElementById('empty');
     var activeFilter = 'all';
 
-    function normalise(str) { return str.toLowerCase().trim(); }
+    function normalize(str) { return str.toLowerCase().trim(); }
 
     function applyFilters() {
-      var query = normalise(searchInput.value);
+      var query = normalize(searchInput.value);
       var visible = 0;
       cards.forEach(function (card) {
         var typeMatch = activeFilter === 'all' || card.dataset.type === activeFilter;
