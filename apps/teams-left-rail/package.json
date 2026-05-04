@@ -1,0 +1,23 @@
+{
+  "name": "teams-left-rail-swreq",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Teams left-rail app for software request intake and report viewing",
+  "main": "dist/server/index.js",
+  "scripts": {
+    "build": "tsc && node scripts/copy-web.js",
+    "start": "node dist/server/index.js",
+    "dev": "tsx watch src/server/index.ts"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.6.0",
+    "express": "^4.21.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

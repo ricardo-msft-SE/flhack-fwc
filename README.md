@@ -21,6 +21,7 @@ The docs cover the complete architecture, agent design, step-by-step deployment,
 | Security & RBAC | [docs/security.md](docs/security.md) |
 | Monitoring & Evaluation | [docs/monitoring.md](docs/monitoring.md) |
 | Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
+| Teams Left-Rail MVP | [apps/teams-left-rail/README.md](apps/teams-left-rail/README.md) |
 | FAQ | [docs/faq.md](docs/faq.md) |
 | Glossary | [docs/glossary.md](docs/glossary.md) |
 
@@ -41,6 +42,8 @@ An AI multi-agent system built on **Microsoft Foundry** that:
 ```
 /
 ├── README.md          ← You are here (overview + links)
+├── apps/
+│   └── teams-left-rail/  ← Initial Teams left-rail implementation scaffold
 ├── docs/              ← GitHub Pages documentation site
 │   ├── _config.yml    ← Jekyll / just-the-docs configuration
 │   ├── index.md       ← Site home page

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
+  "version": "0.1.0",
+  "id": "d3ac774f-755c-4d9c-bfe3-14ef4f42fca4",
+  "developer": {
+    "name": "Contoso IT",
+    "websiteUrl": "https://contoso.example.com",
+    "privacyUrl": "https://contoso.example.com/privacy",
+    "termsOfUseUrl": "https://contoso.example.com/terms"
+  },
+  "name": {
+    "short": "Software Requests",
+    "full": "Software Request Approval Workspace"
+  },
+  "description": {
+    "short": "Submit and review software approval requests",
+    "full": "Teams left-rail app for software request intake, status monitoring, and final HTML report viewing."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#106ebe",
+  "staticTabs": [
+    {
+      "entityId": "software-request-home",
+      "name": "Software Requests",
+      "contentUrl": "https://app-flhack-swreq-wcu.azurewebsites.net/",
+      "websiteUrl": "https://app-flhack-swreq-wcu.azurewebsites.net/",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["app-flhack-swreq-wcu.azurewebsites.net"],
+  "webApplicationInfo": {
+    "id": "9ce9f39d-5317-4f3b-91c8-ac3a086605d1",
+    "resource": "api://9ce9f39d-5317-4f3b-91c8-ac3a086605d1"
+  }
+}
