@@ -43,6 +43,7 @@ The system receives a software request, automatically researches compliance, sec
 | [Configuration](configuration.md) | LLM models, Foundry agent setup, Knowledge/Bing |
 | [Usage & Approval Workflow](usage.md) | Copilot Studio, Work IQ, and the Teams approval card |
 | [Report Specification](report-spec.md) | Report template structure and quality gates |
+| [SharePoint Document Retrieval](Foundry-SharePoint-Retrieval.md) | Indexed vs remote SharePoint, Bing grounding, knowledge base setup |
 | [Security & RBAC](security.md) | Managed identities, role assignments, content safety |
 | [Monitoring & Evaluation](monitoring.md) | App Insights, Foundry Evaluation, key metrics |
 | [Troubleshooting](troubleshooting.md) | Common issues and fixes |
