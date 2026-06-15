@@ -80,6 +80,78 @@ Expected behavior:
 
 ## Part 2: Implement Query Separation in VS Code
 
+### Step 2.0: Understand Who Calls What and When
+
+Use this sequence as the source of truth for runtime behavior:
+
+```mermaid
+sequenceDiagram
+   participant U as User
+   participant API as App API (Function/Server)
+   participant POL as PII Policy Module
+   participant G as Web Grounding Client
+   participant F as Foundry Agent
+
+   U->>API: "I am Jane Doe from Finance..."
+   API->>POL: evaluatePiiPolicy(userText)
+   POL-->>API: action=redact, sanitizedQuery="SOC 2 vendor controls checklist"
+
+   alt action is allow or redact
+      API->>G: runWebGrounding(sanitizedQuery)
+      G-->>API: web evidence/snippets
+      API->>F: invoke agent with grounded content (no raw PII)
+      F-->>API: response draft
+      API-->>U: final response
+   else action is block or manual-review
+      API-->>U: secure review message
+   end
+```
+
+Call responsibilities:
+
+1. **Client/UI** sends raw user prompt to your API
+2. **API handler** calls `evaluatePiiPolicy(...)` first
+3. **Policy module** returns `allow`, `redact`, `block`, or `manual-review`
+4. **Grounding client** is called only when action is `allow` or `redact`
+5. **Foundry invoke** receives only sanitized/approved research context
+
+### Step 2.0.1: What Is Needed in Foundry UI?
+
+For this code path, the PII separation logic runs in your app (not automatically in Foundry). In Foundry UI, configure guardrails as defense-in-depth:
+
+1. Open https://ai.azure.com and go to your project
+2. Open your agent under **Build** -> **Agents**
+3. In agent configuration/settings:
+  - Enable available safety/guardrail controls
+  - Add system instruction such as: "Never include personal identifiers from user prompts in external research queries."
+  - Keep tool instructions aligned with your app policy actions
+4. Save and re-test
+
+Important:
+
+1. Foundry guardrails do not replace your app-side pre-grounding policy gate
+2. Treat app-side policy as the primary control that prevents raw PII from leaving your tenant boundary
+
+### Step 2.0.2: Exactly What to Create vs Update in VS Code
+
+In VS Code, do these file operations explicitly:
+
+1. **Create new file:** `src/server/piiQueryPolicy.ts`
+  - This file contains only policy evaluation and topic sanitization logic
+2. **Update existing API entry file** (choose your app's entry point):
+  - If using Azure Functions: update the HTTP trigger file (for example `onTicketSubmitted.ts`)
+  - If using this repo pattern: update request handling in `apps/teams-left-rail/src/server/index.ts`
+3. **Optionally update Foundry call wrapper:**
+  - If your repo centralizes agent calls in `apps/teams-left-rail/src/server/foundryClient.ts`, ensure it accepts sanitized research query/content and never raw user PII text for grounding
+
+Recommended minimal integration order:
+
+1. Add new policy module file
+2. Import policy module in API handler
+3. Gate grounding call by policy result
+4. Replace outbound grounding input with `sanitizedQuery`
+5. Verify logs contain only redacted metadata
+
 ### Step 2.1: Add a Sanitization Module
 
 Create a file in your app (example path):
@@ -186,6 +258,27 @@ async function handleUserResearchPrompt(userText: string): Promise<string> {
   return `Here are SOC 2 vendor control considerations based on public sources:\n\n${groundedContent}`;
 }
 ```
+
+### Step 2.3: Wire Into Existing Files (Concrete Mapping)
+
+If you are implementing inside this repository structure, use this mapping:
+
+1. Create: `apps/teams-left-rail/src/server/piiQueryPolicy.ts`
+2. Update: `apps/teams-left-rail/src/server/index.ts`
+  - Import `evaluatePiiPolicy`
+  - Run policy before any grounding/tool call
+3. Update: `apps/teams-left-rail/src/server/foundryClient.ts` (if needed)
+  - Ensure request body uses sanitized research query/context
+  - Do not pass raw user identity fields to external grounding calls
+
+### Step 2.4: Sanity Check Before Moving to Part 3
+
+Before test execution, confirm:
+
+1. There is exactly one policy gate before grounding
+2. No alternative code path calls grounding with raw user text
+3. Logs print only policy metadata (`action`, `riskLevel`, `detectedEntities`, `sanitizedQuery`)
+4. Block/manual-review path returns without grounding call
 
 ---
 
@@ -299,3 +392,182 @@ Implement policy-as-code:
 | `My email is jane@contoso.com and phone is 555-123-4567. SOC 2 help?` | `manual-review` (example policy) | none |
 
 This lab can be run as a standalone exercise or used as a security extension for your existing webhook-driven Foundry implementation.
+
+---
+
+## Appendix C: Copy/Paste Patch Set for This Repository
+
+Use this appendix if you want concrete starter edits for the current repo layout.
+
+### C.1 Create New File: apps/teams-left-rail/src/server/piiQueryPolicy.ts
+
+Create this file and paste:
+
+```typescript
+export type PolicyAction = "allow" | "redact" | "block" | "manual-review";
+
+export interface PiiPolicyResult {
+  action: PolicyAction;
+  riskLevel: "low" | "medium" | "high";
+  detectedEntities: string[];
+  sanitizedQuery: string;
+}
+
+const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+const PHONE_REGEX = /\+?\d[\d\s().-]{7,}\d/g;
+const NAME_HINT_REGEX = /\b(i am|i'm|my name is)\s+[a-z]+\s+[a-z]+/i;
+const DEPT_HINT_REGEX = /\b(finance|hr|human resources|legal|sales|engineering|it)\b/i;
+
+function extractTopicIntent(input: string): string {
+  const lower = input.toLowerCase();
+
+  if (lower.includes("soc 2") && lower.includes("vendor") && lower.includes("control")) {
+    return "SOC 2 vendor controls checklist";
+  }
+
+  if (lower.includes("soc 2")) {
+    return "SOC 2 controls overview";
+  }
+
+  return "vendor risk and compliance controls";
+}
+
+export function evaluatePiiPolicy(userText: string): PiiPolicyResult {
+  const detectedEntities: string[] = [];
+
+  if (EMAIL_REGEX.test(userText)) detectedEntities.push("email");
+  if (PHONE_REGEX.test(userText)) detectedEntities.push("phone");
+  if (NAME_HINT_REGEX.test(userText)) detectedEntities.push("person-name");
+  if (DEPT_HINT_REGEX.test(userText)) detectedEntities.push("department");
+
+  const detectedCount = detectedEntities.length;
+
+  if (detectedCount >= 3) {
+    return {
+      action: "manual-review",
+      riskLevel: "high",
+      detectedEntities,
+      sanitizedQuery: ""
+    };
+  }
+
+  if (detectedCount >= 1) {
+    return {
+      action: "redact",
+      riskLevel: "medium",
+      detectedEntities,
+      sanitizedQuery: extractTopicIntent(userText)
+    };
+  }
+
+  return {
+    action: "allow",
+    riskLevel: "low",
+    detectedEntities,
+    sanitizedQuery: extractTopicIntent(userText)
+  };
+}
+```
+
+### C.2 Update Existing File: apps/teams-left-rail/src/server/index.ts
+
+In this repo, `/api/requests` is the main API entry that receives user-provided fields. Add PII policy gating before invoking Foundry.
+
+1. Add import near the top:
+
+```typescript
+import { evaluatePiiPolicy } from "./piiQueryPolicy";
+```
+
+2. In the async processing block inside `app.post("/api/requests", ...)`, add policy evaluation before `invokeFoundryAssessment(record.input)`:
+
+```typescript
+const policyInput = `${record.input.requesterName || ""} ${record.input.requesterDepartment || ""} ${record.input.businessJustification || ""}`;
+const policy = evaluatePiiPolicy(policyInput);
+
+console.log("PII policy decision", {
+  requestId: record.requestId,
+  action: policy.action,
+  riskLevel: policy.riskLevel,
+  detectedEntities: policy.detectedEntities,
+  sanitizedQuery: policy.sanitizedQuery
+});
+
+if (policy.action === "block" || policy.action === "manual-review") {
+  markIncomplete(record.requestId, "PII policy blocked external research; routed to manual review.");
+  return;
+}
+```
+
+3. Optional hardening before Foundry call (recommended):
+
+```typescript
+const safeInput = {
+  ...record.input,
+  requesterName: policy.action === "redact" ? "[REDACTED]" : record.input.requesterName,
+  requesterDepartment: policy.action === "redact" ? "[REDACTED]" : record.input.requesterDepartment
+};
+
+const foundryResult = await invokeFoundryAssessment(safeInput);
+```
+
+### C.3 Update Existing File: apps/teams-left-rail/src/server/foundryClient.ts
+
+If your Foundry prompt or metadata include identity fields, sanitize prior to outbound call.
+
+1. Add a small helper before `invokeFoundryAssessment`:
+
+```typescript
+function redactIdentity(input: SoftwareRequestInput): SoftwareRequestInput {
+  return {
+    ...input,
+    requesterName: "[REDACTED]",
+    requesterDepartment: "[REDACTED]"
+  };
+}
+```
+
+2. Apply helper in `invokeFoundryAssessment` only when your policy indicates redaction (pass in already-redacted `safeInput` from `index.ts`, or use this directly).
+
+3. Ensure outbound body fields do not include raw identity values when redaction is active:
+
+```typescript
+const body = {
+  input,
+  messages: [
+    {
+      role: "user",
+      content: `Assess software request for ${input.softwareName} ${input.softwareVersion} from ${input.vendorName}.`
+    }
+  ],
+  metadata: {
+    requesterName: input.requesterName,
+    requesterDepartment: input.requesterDepartment,
+    licenseCount: input.licenseCount
+  }
+};
+```
+
+When using redaction mode, ensure `input.requesterName` and `input.requesterDepartment` are already scrubbed before this body is built.
+
+### C.4 Foundry UI Checklist for This Patch Set
+
+After code changes, align your agent configuration:
+
+1. Open your Foundry agent in Azure AI Foundry
+2. Enable available safety/guardrail controls
+3. Add system guidance that external research must not include personal identifiers
+4. Save and test with the Jane Doe prompt
+
+### C.5 Quick Verification Steps
+
+Run this test prompt through your app:
+
+`I am Jane Doe from Finance. What are SOC 2 vendor controls?`
+
+Verify:
+
+1. Policy action is `redact` or stricter
+2. Logs show policy metadata but not raw `Jane Doe` or `Finance`
+3. Outbound request context excludes raw identifiers
+4. User still receives SOC 2 guidance
