@@ -408,3 +408,275 @@ curl -X POST http://localhost:7071/api/onTicketSubmitted \
 2. **Add notifications:** Implement `notifyRequester()` to send email, Slack, or update the ticket comment
 3. **Add retry logic:** Wrap Foundry calls in exponential backoff for resilience
 4. **Monitor:** Enable Application Insights on your Function App to track invocation latency
+
+---
+
+## Appendix A: PII Handling Patterns for This Lab
+
+This appendix provides practical options to detect, redact, flag, and govern personally identifiable information (PII) in the webhook-driven software assessment flow.
+
+### A.1 Where PII Can Appear in This Solution
+
+PII can appear in multiple stages:
+
+1. **Inbound ticket payload** (requestor name, email, phone, free text fields)
+2. **Prompt payload sent to Foundry** (ticket fields copied into model context)
+3. **Agent output** (recommendation text, evidence links, notes)
+4. **Stored records** (database rows, ticket comments, logs, telemetry)
+
+Use layered controls so no single missed check becomes a data leak.
+
+### A.2 Approach 1: Azure AI Content Safety for Real-Time Detection
+
+Use Azure AI Content Safety before and after agent invocation to identify PII categories in near real time.
+
+**Best use in this lab:**
+
+1. Scan inbound ticket text before calling Foundry
+2. Decide action by policy: redact, flag for review, block, or route to escalation
+3. Scan agent output before writing to storage or posting back to helpdesk
+
+**When to choose this:**
+
+- You need deterministic API-based checks in the request path
+- You want explicit control over what gets blocked vs redacted
+
+### A.3 Approach 2: Foundry Guardrails and Safety Configuration
+
+Use Foundry safety settings to reduce PII risk at the model layer.
+
+**Best use in this lab:**
+
+1. Configure safety/guardrail policies in the agent
+2. Add output constraints so responses avoid unnecessary sensitive fields
+3. Use policy-based handling to flag or block unsafe outputs
+
+**When to choose this:**
+
+- You want built-in model safety controls with minimal custom code
+- You want protection close to prompt/response generation
+
+### A.4 Approach 3: Microsoft Purview for Governance and Classification
+
+Use Purview to classify and govern PII in persisted data stores (for example, the assessment results database).
+
+**Best use in this lab:**
+
+1. Register your result data source in Purview
+2. Run scans/classification on stored assessment records
+3. Apply governance: retention, access boundaries, and auditability
+
+**When to choose this:**
+
+- You need compliance reporting, lineage, and enterprise governance
+- You need ongoing visibility of where sensitive fields are stored
+
+### A.5 Approach 4: Hybrid Pattern (Recommended)
+
+Most teams should combine the prior approaches:
+
+1. **Ingress check:** Content Safety on incoming ticket text
+2. **Generation safety:** Foundry guardrails during model processing
+3. **Egress check:** Content Safety on final model output
+4. **At-rest governance:** Purview scans and policy enforcement on stored data
+
+This gives prevention + detection + governance coverage across the full lifecycle.
+
+### A.6 Approach 5: Purview Information Protection (MIP Labels and DLP)
+
+Use MIP and DLP to classify and protect sensitive content where results are shared (for example, collaboration tools, documents, downstream systems).
+
+**Best use in this lab:**
+
+1. Apply sensitivity labels to records/documents generated from assessments
+2. Use DLP policies to prevent oversharing/exfiltration
+3. Enforce encryption/handling rules for highly sensitive outputs
+
+**When to choose this:**
+
+- You need cross-tool protection beyond the app/database boundary
+- You have enterprise labeling and DLP requirements
+
+### A.7 Recommended Policy Decisions to Define Early
+
+Define these decisions before production:
+
+1. **PII categories in scope:** email, phone, national ID, payment data, etc.
+2. **Action per category/severity:** redact vs block vs manual review
+3. **Logging policy:** never log raw sensitive values
+4. **Retention windows:** how long ticket payloads and outputs are kept
+5. **Access model:** least privilege for operations and analysts
+
+### A.8 Example Control Points in This Lab Workflow
+
+Map controls to existing lab steps:
+
+1. **Function entrypoint (before invokeFoundryAgent):** inbound PII scan and redaction
+2. **Foundry agent configuration:** safety/guardrail policy
+3. **After Foundry response:** outbound scan/redaction before storeResult and notifyRequester
+4. **Storage layer:** Purview classification and governance policies
+5. **Notification layer:** suppress sensitive fields in ticket comments/emails
+
+### A.9 Practical Rollout Plan
+
+Implement in phases:
+
+1. **Phase 1 (MVP):** Foundry guardrails + minimal field redaction + safe logging
+2. **Phase 2:** Add Content Safety checks at ingress and egress
+3. **Phase 3:** Enable Purview scans and governance reporting
+4. **Phase 4:** Add MIP labels and DLP for downstream sharing channels
+
+### A.10 Quick Decision Guide
+
+| Requirement | Best Starting Point |
+|---|---|
+| Fastest path to basic protection | Foundry guardrails |
+| Real-time API checks and explicit policy actions | Azure AI Content Safety |
+| Compliance, inventory, and governance reporting | Microsoft Purview |
+| End-to-end enterprise protection | Hybrid pattern with MIP and DLP |
+
+---
+
+## Appendix B: Lab Extension Exercise - Implement PII Controls Incrementally
+
+Use this extension to turn the conceptual PII guidance into executable implementation tasks.
+
+### B.1 Goal
+
+Implement and validate PII handling in four progressive stages:
+
+1. Stage 1: Foundry guardrails and safe logging
+2. Stage 2: Real-time ingress/egress PII detection with Azure AI Content Safety
+3. Stage 3: Governance and classification with Microsoft Purview
+4. Stage 4: Sensitivity labels and DLP controls for downstream sharing
+
+### B.1.1 Estimated Effort
+
+| Stage | Typical Effort | Primary Owners |
+|---|---|---|
+| Stage 1: Guardrails + safe logging | 0.5-1 day | App engineer + AI engineer |
+| Stage 2: Content Safety ingress/egress checks | 1-2 days | App engineer |
+| Stage 3: Purview governance onboarding | 2-5 days | Data governance + platform team |
+| Stage 4: MIP labels and DLP rollout | 2-5 days | Security/compliance + M365 admin |
+
+Notes:
+
+1. Effort varies by existing enterprise controls, approval processes, and environment readiness.
+2. For pilot projects, complete Stage 1 and Stage 2 first to reduce risk quickly.
+
+### B.2 Prerequisites
+
+Before starting this extension:
+
+1. Complete Parts 1-4 of this lab
+2. Confirm `onTicketSubmitted` is deployed and callable
+3. Have test payloads ready that include synthetic PII (not real customer data)
+
+### B.3 Stage 1 Exercise: Foundry Guardrails + Safe Logging
+
+**Objective:** Ensure model-level controls exist and sensitive values are not written to logs.
+
+Tasks:
+
+1. In Foundry, open your agent safety/guardrail configuration and enable appropriate safeguards
+2. Update function logging policy so inbound and outbound payload logs redact or suppress sensitive fields
+3. Add a `piiPolicyVersion` metadata field to each assessment record so policy rollout is traceable
+
+Validation checklist:
+
+1. Trigger with synthetic PII values and verify logs do not contain raw values
+2. Confirm assessment flow still succeeds for non-sensitive payloads
+3. Confirm records contain `piiPolicyVersion`
+
+### B.4 Stage 2 Exercise: Azure AI Content Safety in Request Path
+
+**Objective:** Add explicit PII detection before and after Foundry invocation.
+
+Tasks:
+
+1. Provision an Azure AI Content Safety resource
+2. Add function settings for endpoint and credentials
+3. Implement an ingress check (before `invokeFoundryAgent`) that scans ticket text
+4. Apply policy action for detections: redact, flag, or route to manual review
+5. Implement an egress check (after Foundry response) before `storeResult` and `notifyRequester`
+
+Suggested policy example:
+
+1. High-risk detections: block and route to review queue
+2. Medium-risk detections: redact and continue
+3. Low-risk detections: flag and continue
+
+Validation checklist:
+
+1. A payload with synthetic email/phone is detected at ingress
+2. Redacted values are used in downstream processing when configured
+3. Outbound detections prevent raw sensitive values from being stored/shared
+4. Non-PII payload path still returns `202` with normal latency profile
+
+### B.5 Stage 3 Exercise: Purview Governance and Classification
+
+**Objective:** Govern sensitive data at rest and produce auditable classification outcomes.
+
+Tasks:
+
+1. Register the assessment data source in Purview
+2. Configure and run classification scans against stored assessment records
+3. Define retention and access policy aligned to sensitivity
+4. Create a recurring review process for scan results and exceptions
+
+Validation checklist:
+
+1. Sensitive fields are classified in scan output
+2. Classification artifacts are reviewable by compliance owners
+3. Access and retention policies are documented and enforceable
+
+### B.6 Stage 4 Exercise: Sensitivity Labels and DLP
+
+**Objective:** Prevent oversharing when results leave the app boundary.
+
+Tasks:
+
+1. Define label mapping from assessment sensitivity level to MIP label
+2. Apply labels to generated artifacts/messages where applicable
+3. Configure DLP rules for common exfiltration paths (email/chat/document channels)
+4. Add exception workflow for approved business cases
+
+Validation checklist:
+
+1. Sensitive assessment outputs are labeled automatically
+2. DLP policies block or warn on prohibited sharing actions
+3. Exception path is auditable and policy-governed
+
+### B.7 Test Dataset for the Exercise
+
+Create synthetic payloads for each class:
+
+1. Clean payload (no sensitive tokens)
+2. Email and phone in requester fields
+3. National ID-like pattern in free text
+4. Mixed payload with multiple sensitive categories
+
+For each payload, capture:
+
+1. Ingress detection result
+2. Action taken (allow/redact/block/review)
+3. Egress detection result
+4. Stored record outcome
+5. Notification output outcome
+
+### B.8 Exit Criteria
+
+This extension is complete when:
+
+1. Sensitive values are not present in logs
+2. Ingress and egress detection paths are active and tested
+3. Data-at-rest is classifiable and governed
+4. Downstream sharing controls are in place for sensitive outputs
+
+### B.9 Optional Advanced Challenge
+
+Implement policy-as-code for PII handling:
+
+1. Externalize detection thresholds and actions by environment (dev/test/prod)
+2. Version policy changes and attach policy version to each record
+3. Add automated integration tests that assert policy behavior for synthetic payloads
